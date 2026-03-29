@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",                                
+    "rootDir": "./src",
+    "outDir": "./dist",  
+    "moduleResolution": "node10", 
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "ignoreDeprecations": "6.0"
+  },
+}
