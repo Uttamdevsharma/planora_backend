@@ -10,6 +10,8 @@ interface EnvConfig {
   PORT: string;
   DATABASE_URL: string;
 
+  AUTH_SECRET:string;
+
   // Cloudinary
   CLOUDINARY_CLOUD_NAME: string;
   CLOUDINARY_API_KEY: string;
@@ -25,6 +27,7 @@ const loadEnvVariables = (): EnvConfig => {
     "NODE_ENV",
     "PORT",
     "DATABASE_URL",
+    "AUTH_SECRET",
 
     // Cloudinary
     "CLOUDINARY_CLOUD_NAME",
@@ -49,6 +52,7 @@ const loadEnvVariables = (): EnvConfig => {
     NODE_ENV: process.env.NODE_ENV as string,
     PORT: process.env.PORT as string,
     DATABASE_URL: process.env.DATABASE_URL as string,
+    AUTH_SECRET:process.env.AUTH_SECRET as string,
 
     CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME as string,
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY as string,
