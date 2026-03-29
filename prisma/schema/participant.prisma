@@ -1,0 +1,15 @@
+model Participant {
+  id            String   @id @default(uuid())
+  userId        String
+  eventId       String
+
+  status        ParticipationStatus @default(PENDING)
+  paymentStatus PaymentStatus       @default(UNPAID)
+
+  user   User  @relation(fields: [userId], references: [id])
+  event  Event @relation(fields: [eventId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, eventId])
+}

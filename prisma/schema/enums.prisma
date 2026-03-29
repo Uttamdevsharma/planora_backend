@@ -1,0 +1,26 @@
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ParticipationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  BANNED
+}
+
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+}
+
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+

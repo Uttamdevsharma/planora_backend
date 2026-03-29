@@ -1,0 +1,14 @@
+model Earnings {
+  id           String   @id @default(uuid())
+  eventId      String
+  creatorId    String
+
+  amount       Float
+  platformFee  Float
+  creatorEarn  Float
+
+  event   Event @relation(fields: [eventId], references: [id])
+  creator User  @relation(fields: [creatorId], references: [id])
+
+  createdAt DateTime @default(now())
+}

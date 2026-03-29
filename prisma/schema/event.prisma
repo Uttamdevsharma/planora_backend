@@ -1,0 +1,23 @@
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  date        DateTime
+  time        String
+  venue       String
+  imageUrl    String?
+
+  isPublic    Boolean
+  fee         Float     @default(0)
+
+  creatorId   String
+  creator     User      @relation("CreatorEvents", fields: [creatorId], references: [id])
+
+  participants Participant[]
+  reviews      Review[]
+  earnings     Earnings[]
+  invitations  Invitation[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
