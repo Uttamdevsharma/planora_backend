@@ -5,10 +5,13 @@ model Event {
   date        DateTime
   time        String
   venue       String
+  meetingLink String?
   imageUrl    String?
 
+  type        EventType @default(OFFLINE)
   isPublic    Boolean
   fee         Float     @default(0)
+  isFeatured  Boolean   @default(false)
 
   creatorId   String
   creator     User      @relation("CreatorEvents", fields: [creatorId], references: [id])

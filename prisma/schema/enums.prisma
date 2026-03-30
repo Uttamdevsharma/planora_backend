@@ -23,4 +23,7 @@ enum InvitationStatus {
   DECLINED
 }
 
-
+enum EventType {
+  ONLINE
+  OFFLINE
+}

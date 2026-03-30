@@ -5,6 +5,7 @@ model Participant {
 
   status        ParticipationStatus @default(PENDING)
   paymentStatus PaymentStatus       @default(UNPAID)
+  transactionId String?
 
   user   User  @relation(fields: [userId], references: [id])
   event  Event @relation(fields: [eventId], references: [id])
