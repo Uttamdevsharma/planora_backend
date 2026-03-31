@@ -95,26 +95,6 @@ const handleWebhook = async (sig: string, payload: Buffer) => {
         });
       }
 
-      // Check if earnings already created
-      const existingEarnings = await prisma.earnings.findFirst({
-        where: { eventId, amount: (session.amount_total || 0) / 100, createdAt: { gte: new Date(Date.now() - 1000 * 60 * 60) } }
-      });
-
-      if (!existingEarnings) {
-        const amount = session.amount_total ? session.amount_total / 100 : 0;
-        const platformFee = amount * 0.1; 
-        const creatorEarn = amount - platformFee;
-
-        await prisma.earnings.create({
-          data: {
-            eventId,
-            creatorId: participation.event.creatorId,
-            amount,
-            platformFee,
-            creatorEarn,
-          },
-        });
-      }
     } catch (e: any) {
       console.error("Webhook processing error:", e);
     }
@@ -179,26 +159,6 @@ const verifyPayment = async (sessionId: string) => {
         });
       }
 
-      // Check if earnings already created for this session
-      const existingEarnings = await prisma.earnings.findFirst({
-          where: { eventId, amount: (session.amount_total || 0) / 100, createdAt: { gte: new Date(Date.now() - 1000 * 60 * 60) } }
-      });
-
-      if (!existingEarnings) {
-          const amount = session.amount_total ? session.amount_total / 100 : 0;
-          const platformFee = amount * 0.1;
-          const creatorEarn = amount - platformFee;
-
-          await prisma.earnings.create({
-            data: {
-              eventId,
-              creatorId: participation.event.creatorId,
-              amount,
-              platformFee,
-              creatorEarn,
-            },
-          });
-      }
 
       return participation;
     } catch (error: any) {

@@ -58,12 +58,37 @@ const updateParticipationStatus = async (ownerId: string, participantId: string,
     throw new AppError(status.FORBIDDEN, "Only the event creator can manage participants");
   }
 
-  const updated = await prisma.participant.update({
-    where: { id: participantId },
-    data: { status: statusPayload },
+  const result = await prisma.$transaction(async (tx) => {
+    const updated = await tx.participant.update({
+      where: { id: participantId },
+      data: { status: statusPayload },
+    });
+
+    if (statusPayload === ParticipationStatus.APPROVED) {
+      if (participation.paymentStatus === PaymentStatus.PAID && participation.event.fee > 0) {
+        // Since we cannot add a unique participantId column to the current DB,
+        // we will perform a simple create. 
+        // Note: Re-approving might duplicate earnings until a schema change is possible.
+        const amount = participation.event.fee;
+        const platformFee = amount * 0.1;
+        const creatorEarn = amount - platformFee;
+
+        await tx.earnings.create({
+          data: {
+            eventId: participation.eventId,
+            creatorId: participation.event.creatorId,
+            amount,
+            platformFee,
+            creatorEarn,
+          },
+        });
+      }
+    }
+
+    return updated;
   });
 
-  return updated;
+  return result;
 };
 
 const getEventParticipants = async (ownerId: string, eventId: string) => {
