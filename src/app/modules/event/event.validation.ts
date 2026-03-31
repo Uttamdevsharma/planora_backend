@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EventType } from "../../../generated/prisma/enums";
+import { EventType } from "../../../generated/prisma/index.js";
 
 const createEventSchema = z.object({
   title: z.string({ required_error: "Title is required" }),

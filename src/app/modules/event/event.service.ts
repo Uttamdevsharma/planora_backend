@@ -1,14 +1,15 @@
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../errorHelpers/AppError";
 import status from "http-status";
-import { Prisma } from "../../../generated/prisma";
+import { Prisma } from "../../../generated/prisma/index.js";
 
 const createEvent = async (userId: string, payload: any) => {
+  const { date, ...rest } = payload;
   const event = await prisma.event.create({
     data: {
-      ...payload,
+      ...rest,
       creatorId: userId,
-      date: new Date(payload.date),
+      date: new Date(date),
     },
   });
   return event;
@@ -29,11 +30,13 @@ const updateEvent = async (userId: string, eventId: string, payload: any) => {
     throw new AppError(status.FORBIDDEN, "You are not allowed to update this event");
   }
 
+  const { date, ...rest } = payload;
+
   const updatedEvent = await prisma.event.update({
     where: { id: eventId },
     data: {
-      ...payload,
-      date: payload.date ? new Date(payload.date) : event.date,
+      ...rest,
+      date: date ? new Date(date) : event.date,
     },
   });
 
@@ -62,9 +65,13 @@ const deleteEvent = async (userId: string, eventId: string) => {
 };
 
 const getAllEvents = async (query: any) => {
-  const { searchTerm, isPublic, feeType, type, page = 1, limit = 10 } = query;
+  const { searchTerm, isPublic, isFeatured, feeType, type, creatorId, page = 1, limit = 10 } = query;
 
   const where: Prisma.EventWhereInput = {};
+
+  if (creatorId) {
+    where.creatorId = creatorId;
+  }
 
   if (searchTerm) {
     where.OR = [
@@ -76,6 +83,10 @@ const getAllEvents = async (query: any) => {
 
   if (isPublic !== undefined) {
     where.isPublic = isPublic === "true";
+  }
+
+  if (isFeatured !== undefined) {
+    where.isFeatured = isFeatured === "true";
   }
 
   if (feeType) {

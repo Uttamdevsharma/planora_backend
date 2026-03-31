@@ -1,26 +1,22 @@
 model Event {
-  id          String   @id @default(uuid())
-  title       String
-  description String
-  date        DateTime
-  time        String
-  venue       String
-  meetingLink String?
-  imageUrl    String?
-
-  type        EventType @default(OFFLINE)
-  isPublic    Boolean
-  fee         Float     @default(0)
-  isFeatured  Boolean   @default(false)
-
-  creatorId   String
-  creator     User      @relation("CreatorEvents", fields: [creatorId], references: [id])
-
+  id           String        @id @default(uuid())
+  title        String
+  description  String
+  date         DateTime
+  time         String
+  venue        String
+  imageUrl     String?
+  isPublic     Boolean
+  fee          Float         @default(0)
+  creatorId    String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  isFeatured   Boolean       @default(false)
+  meetingLink  String?
+  type         EventType     @default(OFFLINE)
+  earnings     Earnings[]
+  creator      User          @relation("CreatorEvents", fields: [creatorId], references: [id], onDelete: Cascade)
+  invitations  Invitation[]
   participants Participant[]
   reviews      Review[]
-  earnings     Earnings[]
-  invitations  Invitation[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }

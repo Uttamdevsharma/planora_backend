@@ -1,11 +1,39 @@
-import express from "express";
-import { requireAuth } from "../../middleware/auth.middlware.ts";
-import { invitationController } from "./invitation.controller.js";
+import express from 'express';
+import { InvitationController } from './invitation.controller.js';
+import { requireAuth, allowRoles } from "../../middleware/auth.middlware.ts";
+import { Role } from "../../../generated/prisma/index.js";
 
 const router = express.Router();
 
-router.post("/send", requireAuth, invitationController.sendInvitation);
-router.patch("/:invitationId/respond", requireAuth, invitationController.respondToInvitation);
-router.get("/my-invitations", requireAuth, invitationController.getMyInvitations);
+router.post(
+  '/',
+  requireAuth,
+  allowRoles(Role.ADMIN, Role.USER), // Only event creator can send, but they can be ADMIN or USER
+  InvitationController.sendInvitation
+);
+
+router.get(
+  '/',
+  requireAuth,
+  InvitationController.getInvitations
+);
+
+router.patch(
+  '/:invitationId/status',
+  requireAuth,
+  InvitationController.updateInvitationStatus
+);
+
+router.patch(
+  '/:invitationId/pay-accept',
+  requireAuth,
+  InvitationController.payAndAcceptInvitation
+);
+
+router.get(
+  '/search-users',
+  requireAuth,
+  InvitationController.searchUsers
+);
 
 export const InvitationRoutes = router;

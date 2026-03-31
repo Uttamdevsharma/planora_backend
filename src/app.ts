@@ -1,3 +1,4 @@
+import { envVars } from './app/config/env';
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -8,7 +9,7 @@ import { indexRoutes } from "./app/routes";
 
 const app: Application = express();
 
-app.use(cors({ origin: ["http://localhost:3000"], credentials: true }));
+app.use(cors({ origin: envVars.FRONTEND_URL, credentials: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 

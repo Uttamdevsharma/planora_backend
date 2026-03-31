@@ -10,12 +10,10 @@ enum ParticipationStatus {
   BANNED
 }
 
-
 enum PaymentStatus {
   PAID
   UNPAID
 }
-
 
 enum InvitationStatus {
   PENDING

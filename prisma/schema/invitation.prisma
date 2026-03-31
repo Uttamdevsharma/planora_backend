@@ -1,14 +1,15 @@
+// server/prisma/schema/invitation.prisma
+
 model Invitation {
-  id        String   @id @default(uuid())
-  eventId   String
-  senderId  String
-  receiverId String
+  id           String           @id @default(uuid())
+  eventId      String
+  senderId     String
+  receiverId   String
+  status       InvitationStatus @default(PENDING)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
-  status    InvitationStatus @default(PENDING)
-
-  event    Event @relation(fields: [eventId], references: [id])
-  sender   User  @relation("SentInvitations", fields: [senderId], references: [id])
-  receiver User  @relation("ReceivedInvitations", fields: [receiverId], references: [id])
-
-  createdAt DateTime @default(now())
+  event        Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sender       User             @relation("SentInvitations", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver     User             @relation("ReceivedInvitations", fields: [receiverId], references: [id], onDelete: Cascade)
 }

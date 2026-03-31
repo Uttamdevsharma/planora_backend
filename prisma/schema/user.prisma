@@ -1,19 +1,16 @@
 model User {
-  id          String   @id @default(uuid())
-  name        String
-  email       String   @unique
-  password    String
-  role        Role     @default(USER)
-  image       String?
-
-  events      Event[]          @relation("CreatorEvents")
-  participants Participant[]
-  reviews     Review[]
-  earnings    Earnings[]
-
-  sentInvitations     Invitation[] @relation("SentInvitations")
-  receivedInvitations Invitation[] @relation("ReceivedInvitations")
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                  String        @id @default(uuid())
+  name                String
+  email               String        @unique
+  password            String
+  role                Role          @default(USER)
+  image               String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  earnings            Earnings[]
+  events              Event[]       @relation("CreatorEvents")
+  receivedInvitations Invitation[]  @relation("ReceivedInvitations")
+  sentInvitations     Invitation[]  @relation("SentInvitations")
+  participants        Participant[]
+  reviews             Review[]
 }

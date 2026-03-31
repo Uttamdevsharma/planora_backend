@@ -20,6 +20,7 @@ interface EnvConfig {
   // Stripe
   STRIPE_SECRET_KEY: string;
   STRIPE_PUBLISHABLE_KEY: string;
+  FRONTEND_URL:string;
 }
 
 const loadEnvVariables = (): EnvConfig => {
@@ -37,6 +38,7 @@ const loadEnvVariables = (): EnvConfig => {
     // Stripe
     "STRIPE_SECRET_KEY",
     "STRIPE_PUBLISHABLE_KEY",
+    "FRONTEND_URL"
   ];
 
   requiredEnvVariables.forEach((variable) => {
@@ -60,7 +62,9 @@ const loadEnvVariables = (): EnvConfig => {
 
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY as string,
     STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY as string,
-  };
+
+    FRONTEND_URL: process.env.FRONTEND_URL as string
+};
 };
 
-export const envVars = loadEnvVariables();
+export const envVars = loadEnvVariables()

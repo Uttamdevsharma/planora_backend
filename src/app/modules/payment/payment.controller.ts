@@ -38,8 +38,21 @@ const getMyEarnings = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const verifyPayment = catchAsync(async (req: Request, res: Response) => {
+  const { session_id } = req.query;
+  const result = await paymentService.verifyPayment(session_id as string);
+
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "Payment verified and participation created",
+    data: result,
+  });
+});
+
 export const paymentController = {
   createCheckoutSession,
   handleWebhook,
-  getMyEarnings
+  getMyEarnings,
+  verifyPayment
 };

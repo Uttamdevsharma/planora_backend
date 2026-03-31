@@ -3,11 +3,11 @@ import { envVars } from "../../config/env";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../errorHelpers/AppError";
 import status from "http-status";
-import { ParticipationStatus, PaymentStatus } from "../../../generated/prisma/enums";
+import { ParticipationStatus, PaymentStatus } from "../../../generated/prisma/index.js";
 
 const stripe = new Stripe(envVars.STRIPE_SECRET_KEY);
 
-const createCheckoutSession = async (userId: string, eventId: string) => {
+const createCheckoutSession = async (userId: string, eventId: string, invitationId?: string) => {
   const event = await prisma.event.findUnique({
     where: { id: eventId },
   });
@@ -36,11 +36,12 @@ const createCheckoutSession = async (userId: string, eventId: string) => {
         quantity: 1,
       },
     ],
-    success_url: `${process.env.CLIENT_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.CLIENT_URL}/payment/cancel`,
+    success_url: `${envVars.FRONTEND_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${envVars.FRONTEND_URL}/payment/cancel`,
     metadata: {
       userId,
       eventId,
+      invitationId: invitationId || "none",
     },
   });
 
@@ -62,11 +63,15 @@ const handleWebhook = async (sig: string, payload: Buffer) => {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const { userId, eventId } = session.metadata as any;
+    const { userId, eventId, invitationId } = session.metadata as any;
 
-    await prisma.$transaction(async (tx) => {
+    if (!userId || !eventId) {
+      throw new AppError(status.BAD_REQUEST, "Invalid session metadata");
+    }
+
+    try {
       // Update or create participation
-      const participation = await tx.participant.upsert({
+      const participation = await prisma.participant.upsert({
         where: { userId_eventId: { userId, eventId } },
         update: {
           paymentStatus: PaymentStatus.PAID,
@@ -76,28 +81,43 @@ const handleWebhook = async (sig: string, payload: Buffer) => {
           userId,
           eventId,
           paymentStatus: PaymentStatus.PAID,
-          status: ParticipationStatus.PENDING, // Still needs approval? 
-          // Requirement: "Paid Public: Pay -> Pending approval", "Paid Private: Pay -> Request -> Pending"
+          status: ParticipationStatus.PENDING,
           transactionId: session.id,
         },
         include: { event: true }
       });
 
-      // Calculate earnings
-      const amount = session.amount_total ? session.amount_total / 100 : 0;
-      const platformFee = amount * 0.1; // 10% platform fee
-      const creatorEarn = amount - platformFee;
+      // If this was from an invitation, mark it as ACCEPTED
+      if (invitationId && invitationId !== "none") {
+        await prisma.invitation.updateMany({
+          where: { id: invitationId, status: { not: 'ACCEPTED' } },
+          data: { status: 'ACCEPTED' }
+        });
+      }
 
-      await tx.earnings.create({
-        data: {
-          eventId,
-          creatorId: participation.event.creatorId,
-          amount,
-          platformFee,
-          creatorEarn,
-        },
+      // Check if earnings already created
+      const existingEarnings = await prisma.earnings.findFirst({
+        where: { eventId, amount: (session.amount_total || 0) / 100, createdAt: { gte: new Date(Date.now() - 1000 * 60 * 60) } }
       });
-    });
+
+      if (!existingEarnings) {
+        const amount = session.amount_total ? session.amount_total / 100 : 0;
+        const platformFee = amount * 0.1; 
+        const creatorEarn = amount - platformFee;
+
+        await prisma.earnings.create({
+          data: {
+            eventId,
+            creatorId: participation.event.creatorId,
+            amount,
+            platformFee,
+            creatorEarn,
+          },
+        });
+      }
+    } catch (e: any) {
+      console.error("Webhook processing error:", e);
+    }
   }
 
   return { received: true };
@@ -123,8 +143,76 @@ const getMyEarnings = async (userId: string) => {
     };
 }
 
+const verifyPayment = async (sessionId: string) => {
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+  if (session.payment_status === "paid") {
+    const { userId, eventId, invitationId } = session.metadata as any;
+
+    if (!userId || !eventId) {
+      throw new AppError(status.BAD_REQUEST, "Invalid session metadata");
+    }
+
+    try {
+      // Update or create participation
+      const participation = await prisma.participant.upsert({
+        where: { userId_eventId: { userId, eventId } },
+        update: {
+          paymentStatus: PaymentStatus.PAID,
+          transactionId: session.id,
+        },
+        create: {
+          userId,
+          eventId,
+          paymentStatus: PaymentStatus.PAID,
+          status: ParticipationStatus.PENDING,
+          transactionId: session.id,
+        },
+        include: { event: true }
+      });
+
+      // If this was from an invitation, mark it as ACCEPTED
+      if (invitationId && invitationId !== "none") {
+        await prisma.invitation.updateMany({
+          where: { id: invitationId, status: { not: 'ACCEPTED' } },
+          data: { status: 'ACCEPTED' }
+        });
+      }
+
+      // Check if earnings already created for this session
+      const existingEarnings = await prisma.earnings.findFirst({
+          where: { eventId, amount: (session.amount_total || 0) / 100, createdAt: { gte: new Date(Date.now() - 1000 * 60 * 60) } }
+      });
+
+      if (!existingEarnings) {
+          const amount = session.amount_total ? session.amount_total / 100 : 0;
+          const platformFee = amount * 0.1;
+          const creatorEarn = amount - platformFee;
+
+          await prisma.earnings.create({
+            data: {
+              eventId,
+              creatorId: participation.event.creatorId,
+              amount,
+              platformFee,
+              creatorEarn,
+            },
+          });
+      }
+
+      return participation;
+    } catch (error: any) {
+      console.error("Verification error:", error);
+      throw new AppError(status.INTERNAL_SERVER_ERROR, "Failed to verify transaction in database");
+    }
+  }
+
+  throw new AppError(status.BAD_REQUEST, "Payment not completed");
+};
+
 export const paymentService = {
   createCheckoutSession,
   handleWebhook,
-  getMyEarnings
+  getMyEarnings,
+  verifyPayment
 };

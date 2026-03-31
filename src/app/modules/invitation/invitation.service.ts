@@ -1,110 +1,201 @@
-import { prisma } from "../../lib/prisma";
-import { AppError } from "../../errorHelpers/AppError";
-import status from "http-status";
-import { InvitationStatus, ParticipationStatus, PaymentStatus } from "../../../generated/prisma/enums";
+import httpStatus from 'http-status';
+import { PrismaClient, Invitation, InvitationStatus, EventType } from '../../../generated/prisma/index.js';
 
-const sendInvitation = async (senderId: string, payload: { eventId: string; receiverEmail: string }) => {
+import { prisma } from '../../lib/prisma.js';
+import { AppError } from '../../errorHelpers/AppError.js';
+import { paymentService } from '../payment/payment.service.js';
+
+const sendInvitation = async (
+  senderId: string,
+  eventId: string,
+  receiverId: string
+): Promise<Invitation> => {
+  // Check if sender is the event creator
   const event = await prisma.event.findUnique({
-    where: { id: payload.eventId },
+    where: { id: eventId },
   });
 
-  if (!event) {
-    throw new AppError(status.NOT_FOUND, "Event not found");
+  if (!event || event.creatorId !== senderId) {
+    throw new AppError(httpStatus.FORBIDDEN, 'Only the event creator can send invitations.');
   }
 
-  if (event.creatorId !== senderId) {
-    throw new AppError(status.FORBIDDEN, "Only the event creator can send invitations");
-  }
-
+  // Check if receiver exists
   const receiver = await prisma.user.findUnique({
-    where: { email: payload.receiverEmail },
+    where: { id: receiverId },
   });
 
   if (!receiver) {
-    throw new AppError(status.NOT_FOUND, "Receiver user not found");
+    throw new AppError(httpStatus.NOT_FOUND, 'Receiver user not found.');
   }
 
+  // Check if an invitation already exists
   const existingInvitation = await prisma.invitation.findFirst({
     where: {
-      eventId: payload.eventId,
-      receiverId: receiver.id,
-      status: InvitationStatus.PENDING,
+      eventId,
+      senderId,
+      receiverId,
     },
   });
 
   if (existingInvitation) {
-    throw new AppError(status.BAD_REQUEST, "An invitation is already pending for this user");
+    throw new AppError(httpStatus.CONFLICT, 'Invitation already sent to this user for this event.');
   }
 
   const invitation = await prisma.invitation.create({
     data: {
-      eventId: payload.eventId,
+      eventId,
       senderId,
-      receiverId: receiver.id,
+      receiverId,
+      status: InvitationStatus.PENDING,
     },
   });
-
   return invitation;
 };
 
-const respondToInvitation = async (userId: string, invitationId: string, response: InvitationStatus) => {
+const getInvitations = async (userId: string): Promise<Invitation[]> => {
+  const invitations = await prisma.invitation.findMany({
+    where: {
+      OR: [{ senderId: userId }, { receiverId: userId }],
+    },
+    include: {
+      event: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          date: true,
+          time: true,
+          venue: true,
+          imageUrl: true,
+          fee: true,
+          type: true,
+        },
+      },
+      sender: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      receiver: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+  return invitations;
+};
+
+const updateInvitationStatus = async (
+  invitationId: string,
+  userId: string,
+  status: InvitationStatus
+): Promise<Invitation> => {
+  const invitation = await prisma.invitation.findUnique({
+    where: { id: invitationId },
+  });
+
+  if (!invitation || invitation.receiverId !== userId) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'Invitation not found or you are not the receiver.'
+    );
+  }
+
+  if (status === InvitationStatus.ACCEPTED) {
+    // For free events, directly accept
+    const event = await prisma.event.findUnique({ where: { id: invitation.eventId } });
+    if (event?.fee === 0) {
+      await prisma.participant.create({
+        data: {
+          eventId: invitation.eventId,
+          userId: invitation.receiverId,
+          status: 'APPROVED', // Assuming direct approval for free invited participants
+        },
+      });
+    } else {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        'Cannot accept a paid event invitation without payment.'
+      );
+    }
+  }
+
+  const updatedInvitation = await prisma.invitation.update({
+    where: { id: invitationId },
+    data: { status },
+  });
+  return updatedInvitation;
+};
+
+const payAndAcceptInvitation = async (
+  invitationId: string,
+  userId: string
+): Promise<Invitation> => {
   const invitation = await prisma.invitation.findUnique({
     where: { id: invitationId },
     include: { event: true },
   });
 
-  if (!invitation) {
-    throw new AppError(status.NOT_FOUND, "Invitation not found");
+  if (!invitation || invitation.receiverId !== userId) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'Invitation not found or you are not the receiver.'
+    );
   }
 
-  if (invitation.receiverId !== userId) {
-    throw new AppError(status.FORBIDDEN, "You are not the recipient of this invitation");
+  if (invitation.event.fee === 0) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'This is a free event, no payment needed. Use accept invitation instead.'
+    );
   }
 
-  const updatedInvitation = await prisma.invitation.update({
-    where: { id: invitationId },
-    data: { status: response },
-  });
+  // Create Stripe checkout session
+  const session = await paymentService.createCheckoutSession(userId, invitation.eventId, invitationId);
 
-  if (response === InvitationStatus.ACCEPTED) {
-    // Check if event is free or paid
-    // If free, approve instantly. If paid, they might need to pay later?
-    // Requirement says: "Pay & Accept (for paid events). After payment: Status becomes Pending approval"
-    // For now, if accepted, we create a participant record.
-    
-    await prisma.participant.upsert({
-        where: { userId_eventId: { userId, eventId: invitation.eventId } },
-        update: {},
-        create: {
-            userId,
-            eventId: invitation.eventId,
-            status: invitation.event.fee === 0 ? ParticipationStatus.APPROVED : ParticipationStatus.PENDING,
-            paymentStatus: invitation.event.fee === 0 ? PaymentStatus.PAID : PaymentStatus.UNPAID
-        }
-    });
-  }
-
-  return updatedInvitation;
+  return { url: session.url } as any;
 };
 
-const getMyInvitations = async (userId: string) => {
-  const invitations = await prisma.invitation.findMany({
-    where: { receiverId: userId },
-    include: {
-      event: {
-        include: {
-          creator: { select: { id: true, name: true } },
+const searchUsers = async (searchTerm: string, excludeUserId: string) => {
+  const users = await prisma.user.findMany({
+    where: {
+      id: { not: excludeUserId },
+      role: { not: 'ADMIN' },
+      OR: [
+        {
+          name: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
         },
-      },
+        {
+          email: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+      ],
     },
-    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+    },
+    take: 10, // Limit to 10 results for search
   });
-
-  return invitations;
+  return users;
 };
 
-export const invitationService = {
+export const InvitationService = {
   sendInvitation,
-  respondToInvitation,
-  getMyInvitations,
+  getInvitations,
+  updateInvitationStatus,
+  payAndAcceptInvitation,
+  searchUsers,
 };

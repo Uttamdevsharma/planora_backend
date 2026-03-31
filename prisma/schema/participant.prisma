@@ -1,16 +1,13 @@
 model Participant {
-  id            String   @id @default(uuid())
+  id            String              @id @default(uuid())
   userId        String
   eventId       String
-
   status        ParticipationStatus @default(PENDING)
   paymentStatus PaymentStatus       @default(UNPAID)
+  createdAt     DateTime            @default(now())
   transactionId String?
-
-  user   User  @relation(fields: [userId], references: [id])
-  event  Event @relation(fields: [eventId], references: [id])
-
-  createdAt DateTime @default(now())
+  event         Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventId])
 }

@@ -3,6 +3,7 @@ import { catchAsync } from "../../shared/catchAsync";
 import { eventService } from "./event.service";
 import { sendResponse } from "../../shared/sendResponse";
 import status from "http-status";
+import { EventValidation } from "./event.validation";
 
 const createEvent = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.userId;
@@ -14,7 +15,8 @@ const createEvent = catchAsync(async (req: Request, res: Response) => {
 
   // Parse numeric fee if it comes as string from form-data
   if (typeof payload.fee === 'string') {
-      payload.fee = parseFloat(payload.fee);
+      const parsedFee = parseFloat(payload.fee);
+      payload.fee = isNaN(parsedFee) ? 0 : parsedFee;
   }
   
   // Parse boolean isPublic
@@ -22,7 +24,23 @@ const createEvent = catchAsync(async (req: Request, res: Response) => {
       payload.isPublic = payload.isPublic === 'true';
   }
 
-  const result = await eventService.createEvent(userId as string, payload);
+  const validatedData = EventValidation.createEventSchema.parse(payload);
+  
+  // Explicitly pick fields for Prisma to avoid "Database request error" from extra fields
+  const eventData = {
+    title: validatedData.title,
+    description: validatedData.description,
+    date: validatedData.date,
+    time: validatedData.time,
+    venue: validatedData.venue,
+    meetingLink: validatedData.meetingLink || null,
+    type: validatedData.type,
+    isPublic: validatedData.isPublic,
+    fee: validatedData.fee,
+    imageUrl: validatedData.imageUrl || null,
+  };
+
+  const result = await eventService.createEvent(userId as string, eventData);
 
   sendResponse(res, {
     httpStatusCode: status.CREATED,
@@ -42,14 +60,27 @@ const updateEvent = catchAsync(async (req: Request, res: Response) => {
   }
 
   if (typeof payload.fee === 'string') {
-    payload.fee = parseFloat(payload.fee);
+    const parsedFee = parseFloat(payload.fee);
+    payload.fee = isNaN(parsedFee) ? 0 : parsedFee;
   }
   
   if (typeof payload.isPublic === 'string') {
       payload.isPublic = payload.isPublic === 'true';
   }
 
-  const result = await eventService.updateEvent(userId as string, eventId, payload);
+  const validatedData = EventValidation.updateEventSchema.parse(payload);
+  
+  // Explicitly pick fields for Prisma to avoid "Database request error" from extra fields
+  const eventData: any = {};
+  const fields = ['title', 'description', 'date', 'time', 'venue', 'meetingLink', 'type', 'isPublic', 'fee', 'imageUrl'];
+  
+  fields.forEach(field => {
+    if ((validatedData as any)[field] !== undefined) {
+      eventData[field] = (validatedData as any)[field];
+    }
+  });
+
+  const result = await eventService.updateEvent(userId as string, eventId, eventData);
 
   sendResponse(res, {
     httpStatusCode: status.OK,

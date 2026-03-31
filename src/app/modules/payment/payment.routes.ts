@@ -5,6 +5,7 @@ import { paymentController } from "./payment.controller.js";
 const router = express.Router();
 
 router.post("/checkout", requireAuth, paymentController.createCheckoutSession);
+router.get("/verify-payment", requireAuth, paymentController.verifyPayment);
 router.get("/earnings", requireAuth, paymentController.getMyEarnings);
 
 // Webhook route - needs raw body

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express"
 import { JwtPayload } from "../types/jwt.types"
 import jwt from 'jsonwebtoken'
-import { Role } from "../../generated/prisma/enums"
+import { Role } from "../../generated/prisma/index.js"
 import { AppError } from "../errorHelpers/AppError"
 import { envVars } from "../config/env"
 

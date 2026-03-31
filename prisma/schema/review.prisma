@@ -2,12 +2,9 @@ model Review {
   id        String   @id @default(uuid())
   userId    String
   eventId   String
-
   rating    Int
   comment   String
-
-  user  User  @relation(fields: [userId], references: [id])
-  event Event @relation(fields: [eventId], references: [id])
-
   createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

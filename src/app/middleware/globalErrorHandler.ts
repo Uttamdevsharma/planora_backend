@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { ZodError } from "zod";
-import { Prisma } from "../../generated/prisma/client";
+import { Prisma } from "../../generated/prisma/index.js";
 import { AppError } from "../errorHelpers/AppError";
 
 
@@ -56,7 +56,7 @@ export const globalErrorHandler = (
 
     else {
       statusCode = 400;
-      message = "Database request error.";
+      message = error.message || "Database request error.";
     }
   }
 

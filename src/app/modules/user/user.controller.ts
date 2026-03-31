@@ -34,7 +34,35 @@ const updateProfile = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getDashboardStats = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  const result = await userService.getDashboardStats(userId as string);
+
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "Dashboard stats retrieved successfully",
+    data: result,
+  });
+});
+
+const changePassword = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  const payload = req.body;
+
+  await userService.changePassword(userId as string, payload);
+
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "Password changed successfully",
+    data: null,
+  });
+});
+
 export const userController = {
   getMyProfile,
   updateProfile,
+  getDashboardStats,
+  changePassword,
 };
