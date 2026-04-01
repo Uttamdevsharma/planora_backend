@@ -85,10 +85,10 @@ const toggleFeaturedEvent = async (eventId: string, isFeatured: boolean) => {
   if (isFeatured) {
     // Check if any other event is already featured
     const existingFeatured = await prisma.event.findFirst({
-        where: { isFeatured: true }
+      where: { isFeatured: true }
     });
     if (existingFeatured && existingFeatured.id !== eventId) {
-        throw new AppError(status.BAD_REQUEST, "A featured event already exists. Remove it before adding a new one.");
+      throw new AppError(status.BAD_REQUEST, "A featured event already exists. Remove it before adding a new one.");
     }
   }
 

@@ -107,8 +107,8 @@ const getAllEvents = async (query: any) => {
       creator: {
         select: { id: true, name: true, image: true },
       },
-      _count: {
-        select: { participants: true },
+      participants: {
+        select: { status: true },
       },
     },
     skip: (Number(page) - 1) * Number(limit),
@@ -118,13 +118,20 @@ const getAllEvents = async (query: any) => {
 
   const total = await prisma.event.count({ where });
 
+  const data = events.map((event) => {
+    const joinedCount = event.participants.filter((p) => p.status === "APPROVED").length;
+    const pendingCount = event.participants.filter((p) => p.status === "PENDING").length;
+    const { participants, ...rest } = event;
+    return { ...rest, joinedCount, pendingCount };
+  });
+
   return {
     meta: {
       page: Number(page),
       limit: Number(limit),
       total,
     },
-    data: events,
+    data,
   };
 };
 
@@ -153,7 +160,7 @@ const getEventById = async (eventId: string, userId?: string) => {
   // If user is logged in, check if they are already a participant
   let participationStatus = null;
   let isParticipant = false;
-  
+
   if (userId) {
     const participant = await prisma.participant.findUnique({
       where: {
@@ -211,18 +218,18 @@ const updateFeaturedEvent = async (eventId: string) => {
 };
 
 const getUpcomingEvents = async () => {
-    const events = await prisma.event.findMany({
-      where: {
-          isPublic: true,
-          date: { gte: new Date() }
-      },
-      take: 9,
-      orderBy: { date: 'asc' },
-      include: {
-          creator: { select: { id: true, name: true, image: true } }
-      }
-    });
-    return events;
+  const events = await prisma.event.findMany({
+    where: {
+      isPublic: true,
+      date: { gte: new Date() }
+    },
+    take: 9,
+    orderBy: { date: 'asc' },
+    include: {
+      creator: { select: { id: true, name: true, image: true } }
+    }
+  });
+  return events;
 }
 
 export const eventService = {
