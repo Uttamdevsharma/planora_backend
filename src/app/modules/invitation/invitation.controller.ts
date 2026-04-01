@@ -59,9 +59,9 @@ const payAndAcceptInvitation = catchAsync(async (req: Request, res: Response) =>
 });
 
 const searchUsers = catchAsync(async (req: Request, res: Response) => {
-  const { searchTerm } = req.query;
+  const { searchTerm, eventId } = req.query;
   const userId = req.user?.userId as string;
-  const result = await InvitationService.searchUsers(searchTerm as string, userId);
+  const result = await InvitationService.searchUsers(searchTerm as string, userId, eventId as string);
 
   sendResponse(res, {
     httpStatusCode: httpStatus.OK,

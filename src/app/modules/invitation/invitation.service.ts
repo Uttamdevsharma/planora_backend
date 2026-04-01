@@ -161,11 +161,16 @@ const payAndAcceptInvitation = async (
   return { url: session.url } as any;
 };
 
-const searchUsers = async (searchTerm: string, excludeUserId: string) => {
-  const users = await prisma.user.findMany({
-    where: {
-      id: { not: excludeUserId },
-      role: { not: 'ADMIN' },
+const searchUsers = async (searchTerm: string, excludeUserId: string, eventId?: string) => {
+  const where: any = {
+    AND: [
+      { id: { not: excludeUserId } },
+      { role: { not: 'ADMIN' } },
+    ],
+  };
+
+  if (searchTerm) {
+    where.AND.push({
       OR: [
         {
           name: {
@@ -180,15 +185,45 @@ const searchUsers = async (searchTerm: string, excludeUserId: string) => {
           },
         },
       ],
-    },
+    });
+  }
+
+  if (eventId) {
+    where.AND.push({
+      participants: {
+        none: { eventId },
+      },
+    });
+    where.AND.push({
+      receivedInvitations: {
+        none: { 
+          eventId,
+          status: { in: ['PENDING', 'ACCEPTED'] }
+        },
+      },
+    });
+  }
+
+  const users = await prisma.user.findMany({
+    where,
     select: {
       id: true,
       name: true,
       email: true,
       image: true,
     },
-    take: 10, // Limit to 10 results for search
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: 10,
   });
+
+  // LOGGING FOR DEBUGGING
+  try {
+    const fs = await import('fs');
+    fs.appendFileSync('tmp/search_log.txt', `[${new Date().toISOString()}] eventId: ${eventId} | searchTerm: "${searchTerm}" | count: ${users.length} | userIds: ${users.map(u => u.id).join(', ')}\n`);
+  } catch (err) {}
+
   return users;
 };
 
