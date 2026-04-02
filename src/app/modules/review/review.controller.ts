@@ -20,7 +20,7 @@ const updateReview = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.userId;
   const { reviewId } = req.params;
 
-  const result = await reviewService.updateReview(userId as string, reviewId, req.body);
+  const result = await reviewService.updateReview(userId as string, reviewId as string, req.body);
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -34,7 +34,7 @@ const deleteReview = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.userId;
   const { reviewId } = req.params;
 
-  await reviewService.deleteReview(userId as string, reviewId);
+  await reviewService.deleteReview(userId as string, reviewId as string);
 
   sendResponse(res, {
     httpStatusCode: status.OK,

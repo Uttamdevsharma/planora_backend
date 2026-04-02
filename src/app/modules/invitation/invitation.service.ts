@@ -1,5 +1,5 @@
 import httpStatus from 'http-status';
-import { PrismaClient, Invitation, InvitationStatus, EventType } from '../../../generated/prisma/index.js';
+import { PrismaClient, Invitation, InvitationStatus, EventType } from "@prisma/client";
 
 import { prisma } from '../../lib/prisma.js';
 import { AppError } from '../../errorHelpers/AppError.js';

@@ -2,13 +2,14 @@
   "name": "server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/server.js",
-    "build": "tsc",
     "dev": "tsx watch src/server.ts",
-    "seed:admin": "npx tsx src/app/scripts/seedAdmin.ts"
+    "seed:admin": "npx tsx src/app/scripts/seedAdmin.ts",
+    "build": "prisma generate && tsup src/index.ts --format esm --platform node --target node20 --outDir api --external pg-native --no-treeshake",
+    "postinstall": "prisma generate"
   },
   "keywords": [],
   "author": "",
@@ -29,6 +30,7 @@
     "multer": "^2.1.1",
     "multer-storage-cloudinary": "^4.0.0",
     "stripe": "^21.0.1",
+    "vercel": "^50.38.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -43,6 +45,7 @@
     "nodemon": "^3.1.14",
     "prisma": "^7.6.0",
     "ts-node": "^10.9.2",
+    "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   }

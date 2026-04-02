@@ -1,5 +1,5 @@
 import express from "express";
-import { requireAuth } from "../../middleware/auth.middlware.ts";
+import { requireAuth } from "../../middleware/auth.middlware";
 import { userController } from "./user.controller";
 import { upload } from "../../middleware/upload/cloudinary";
 

@@ -6,3 +6,5 @@ dist
 
 /src/generated
 /generated/prisma
+
+.vercel

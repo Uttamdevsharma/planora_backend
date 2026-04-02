@@ -1,7 +1,7 @@
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../errorHelpers/AppError";
 import status from "http-status";
-import { Prisma } from "../../../generated/prisma/index.js";
+import { Prisma } from "@prisma/client";
 
 const createEvent = async (userId: string, payload: any) => {
   const { date, ...rest } = payload;

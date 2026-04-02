@@ -3,7 +3,7 @@ import { envVars } from "../../config/env";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../errorHelpers/AppError";
 import status from "http-status";
-import { ParticipationStatus, PaymentStatus } from "../../../generated/prisma/index.js";
+import { ParticipationStatus, PaymentStatus } from "@prisma/client";
 
 const stripe = new Stripe(envVars.STRIPE_SECRET_KEY);
 

@@ -1,7 +1,7 @@
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../errorHelpers/AppError";
 import status from "http-status";
-import { ParticipationStatus, PaymentStatus } from "../../../generated/prisma/index.js";
+import { ParticipationStatus, PaymentStatus } from "@prisma/client";
 
 const joinEvent = async (userId: string, eventId: string) => {
   const event = await prisma.event.findUnique({

@@ -1,7 +1,7 @@
 import express from 'express';
 import { InvitationController } from './invitation.controller.js';
-import { requireAuth, allowRoles } from "../../middleware/auth.middlware.ts";
-import { Role } from "../../../generated/prisma/index.js";
+import { requireAuth, allowRoles } from "../../middleware/auth.middlware";
+import { Role } from "@prisma/client";
 
 const router = express.Router();
 

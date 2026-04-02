@@ -23,7 +23,7 @@ const updateParticipationStatus = catchAsync(async (req: Request, res: Response)
   const { participantId } = req.params;
   const { status: statusPayload } = req.body;
 
-  const result = await participationService.updateParticipationStatus(ownerId as string, participantId, statusPayload);
+  const result = await participationService.updateParticipationStatus(ownerId as string, participantId as string, statusPayload);
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -37,7 +37,7 @@ const getEventParticipants = catchAsync(async (req: Request, res: Response) => {
   const ownerId = req.user?.userId;
   const { eventId } = req.params;
 
-  const result = await participationService.getEventParticipants(ownerId as string, eventId);
+  const result = await participationService.getEventParticipants(ownerId as string, eventId as string);
 
   sendResponse(res, {
     httpStatusCode: status.OK,

@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
-import { requireAuth, allowRoles } from "../../middleware/auth.middlware.ts";
+import { requireAuth, allowRoles } from "../../middleware/auth.middlware";
 import { eventController } from "./event.controller.js";
 import { upload } from "../../middleware/upload/cloudinary";
 import jwt from "jsonwebtoken";

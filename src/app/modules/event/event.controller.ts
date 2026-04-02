@@ -80,7 +80,7 @@ const updateEvent = catchAsync(async (req: Request, res: Response) => {
     }
   });
 
-  const result = await eventService.updateEvent(userId as string, eventId, eventData);
+  const result = await eventService.updateEvent(userId as string, eventId as string, eventData);
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -94,7 +94,7 @@ const deleteEvent = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.userId;
   const { eventId } = req.params;
 
-  await eventService.deleteEvent(userId as string, eventId);
+  await eventService.deleteEvent(userId as string, eventId as string);
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -120,7 +120,7 @@ const getEventById = catchAsync(async (req: Request, res: Response) => {
   const { eventId } = req.params;
   const userId = req.user?.userId; // Optional userId for checking participation status
 
-  const result = await eventService.getEventById(eventId, userId);
+  const result = await eventService.getEventById(eventId as string, userId);
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -154,7 +154,7 @@ const getUpcomingEvents = catchAsync(async (req: Request, res: Response) => {
 
 const updateFeaturedEvent = catchAsync(async (req: Request, res: Response) => {
   const { eventId } = req.params;
-  const result = await eventService.updateFeaturedEvent(eventId);
+  const result = await eventService.updateFeaturedEvent(eventId as string);
 
   sendResponse(res, {
     httpStatusCode: status.OK,

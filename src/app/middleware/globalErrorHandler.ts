@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { ZodError } from "zod";
-import { Prisma } from "../../generated/prisma/index.js";
+import { Prisma } from "@prisma/client";
 import { AppError } from "../errorHelpers/AppError";
 
 
