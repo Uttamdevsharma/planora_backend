@@ -10,7 +10,7 @@ interface EnvConfig {
   PORT: string;
   DATABASE_URL: string;
 
-  AUTH_SECRET:string;
+  AUTH_SECRET: string;
 
   // Cloudinary
   CLOUDINARY_CLOUD_NAME: string;
@@ -20,7 +20,10 @@ interface EnvConfig {
   // Stripe
   STRIPE_SECRET_KEY: string;
   STRIPE_PUBLISHABLE_KEY: string;
-  FRONTEND_URL:string;
+  FRONTEND_URL: string;
+
+  // Gemini AI (optional — server won't crash if missing, but AI features won't work)
+  OPENROUTER_API_KEY: string
 }
 
 const loadEnvVariables = (): EnvConfig => {
@@ -38,7 +41,11 @@ const loadEnvVariables = (): EnvConfig => {
     // Stripe
     "STRIPE_SECRET_KEY",
     "STRIPE_PUBLISHABLE_KEY",
-    "FRONTEND_URL"
+    "FRONTEND_URL",
+    "OPENROUTER_API_KEY"
+
+    // Note: GEMINI_API_KEY is intentionally NOT required here.
+    // Missing key = graceful error on AI endpoints, not server crash.
   ];
 
   requiredEnvVariables.forEach((variable) => {
@@ -54,7 +61,7 @@ const loadEnvVariables = (): EnvConfig => {
     NODE_ENV: process.env.NODE_ENV as string,
     PORT: process.env.PORT as string,
     DATABASE_URL: process.env.DATABASE_URL as string,
-    AUTH_SECRET:process.env.AUTH_SECRET as string,
+    AUTH_SECRET: process.env.AUTH_SECRET as string,
 
     CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME as string,
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY as string,
@@ -63,8 +70,10 @@ const loadEnvVariables = (): EnvConfig => {
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY as string,
     STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY as string,
 
-    FRONTEND_URL: process.env.FRONTEND_URL as string
-};
+    FRONTEND_URL: process.env.FRONTEND_URL as string,
+
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY as string,
+  };
 };
 
 export const envVars = loadEnvVariables()

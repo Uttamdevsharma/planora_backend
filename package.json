@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/server.js",
-    "dev": "tsx watch src/server.ts",
+    "dev": "nodemon --watch src --watch .env --ext ts,js,json,env --exec tsx src/server.ts",
     "seed:admin": "npx tsx src/app/scripts/seedAdmin.ts",
     "build": "prisma generate && tsup src/index.ts --format esm --platform node --target node20 --outDir api --external pg-native --no-treeshake",
     "postinstall": "prisma generate"
@@ -29,6 +29,7 @@
     "morgan": "^1.10.1",
     "multer": "^2.1.1",
     "multer-storage-cloudinary": "^4.0.0",
+    "openai": "^6.33.0",
     "stripe": "^21.0.1",
     "vercel": "^50.38.2",
     "zod": "^4.3.6"
